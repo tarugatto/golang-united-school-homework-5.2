@@ -5,8 +5,7 @@ import "time"
 type Data struct {
 	value    string
 	deadline time.Time
-	timesup
-	bool
+	timesup  bool
 }
 
 type Cache struct {
