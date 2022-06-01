@@ -2,47 +2,36 @@ package cache
 
 import "time"
 
-type Data struct {
-	value    string
-	deadline time.Time
-	timesup  bool
-}
-
 type Cache struct {
-	data map[string]Data
+	KeyValue map[string]string
 }
 
 func NewCache() Cache {
-	return Cache{make(map[string]Data)}
+	return Cache{make(map[string]string)}
 }
 
-func (c Cache) Get(key string) (string, bool) {
-	res, ok := c.data[key]
-	return res.value, ok
+func (c *Cache) Get(key string) (string, bool) {
+	value, exists := c.KeyValue[key]
+	return value, exists
 }
 
-func (c Cache) Put(key, value string) {
-	c.data[key] = Data{
-		value:   value,
-		timesup: false,
+func (c *Cache) Put(key, value string) {
+	c.KeyValue[key] = value
+}
+
+func (c *Cache) Keys() []string {
+	var sliceKey []string
+	for key := range c.KeyValue {
+		sliceKey = append(sliceKey, key)
 	}
+	return sliceKey
 }
 
-func (c Cache) Keys() []string {
-	res := make([]string, 0, len(c.data))
-	for k, v := range c.data {
-		if !v.timesup || time.Since(v.deadline).Seconds() < 0 {
-			res = append(res, k)
-		}
-	}
+func (c *Cache) PutTill(key, value string, deadline time.Time) {
+	c.KeyValue[key] = value
+	go func() {
+		time.Sleep(deadline.Sub(time.Now()))
+		delete(c.KeyValue, key)
+	}()
 
-	return res
-}
-
-func (c Cache) PutTill(key, value string, deadline time.Time) {
-	c.data[key] = Data{
-		value:    value,
-		deadline: deadline,
-		timesup:  true,
-	}
 }
